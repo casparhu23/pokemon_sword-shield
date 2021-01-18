@@ -1,0 +1,261 @@
+---
+always_allow_html: true
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load the libraries
+library(rvest)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+```
+
+This is a project combined with web scraping and data cleaning. The data sets are from two different website. One is called `serebii.net`that collects Pokemon stats and info and the other website is named `IGN`, a famous games review website.  
+
+!["Pokemon Sword & Shield"](/Users/Caspar/Documents/GitHub_Project/pokemon_sword-shield/images/poke_1.jpg)
+
+## Web Scraping 
+```{r}
+link <- "https://www.serebii.net/swordshield/galarpokedex.shtml"
+pokemon_ss <- read_html(link) %>%  # web scraping
+  html_nodes("table.tab")%>%   # CSS selector
+  html_table(fill=TRUE)%>%.[[2]] 
+head(pokemon_ss)
+```
+The pokemon_ss data set looks pretty bad and we are going to do some data wrangling soon. This data does not have the type column since serebii.net used pictures, and R web scraping cannot transform pictures into text, however the IGN has another data set which includes the type column. Thus, we can use Pokemon ID to merge two data sets together.
+
+```{r}
+link_2 <- "https://www.ign.com/wikis/pokemon-sword-shield/List_of_Pokemon_(Pokedex)#Galarian_Pokedex"
+pokemon_type <- read_html(link_2) %>%  # web scraping
+  html_nodes("table")%>%   # CSS selector
+  html_table(fill=TRUE)%>%.[[1]]
+head(pokemon_type)
+```
+
+## Data Cleaning
+```{r}
+colnames(pokemon_ss) # check column names 
+
+pokemon_ss <- pokemon_ss[,-6]   # remove sixth column
+pokemon_ss <- pokemon_ss[,-2:-3] # remove second, third column
+
+colnames(pokemon_ss) <- c("No.","Name","Abilities","HP","Attack","Defence","Sp_Attack","Sp.Defence","Speed")
+# change column name
+
+pokemon_ss <- pokemon_ss[-1:-2,] # remove first, second rows
+
+pokemon_ss <- na.omit(pokemon_ss) # remove all the NA rows 
+```
+
+```{r}
+pokemon_ss$No. <-  str_replace_all(pokemon_ss$No.,"\\#","") # remove # at the beginning of the No. column
+
+pokemon_ss$No. <- as.numeric(pokemon_ss$No.) # change into numeric
+```
+
+
+```{r}
+unique(pokemon_ss$No.)   # there are 400 unique observations
+unique(pokemon_type$`#`) # there are 400 unique observations
+
+pokemon_list <- merge(pokemon_type, pokemon_ss, by.x = "#", by.y = "No.")  # merge two data sets together
+
+colnames(pokemon_list) <- tolower(colnames(pokemon_list)) # make column names lower case
+
+pokemon_list <- pokemon_list%>%
+  rename(No.="#")  # rename column name
+  
+pokemon_list <- pokemon_list%>%  
+  rename(locations_found="location(s) found")# rename the column name
+
+summary(as.factor(pokemon_list$No.)) # use factor we can see which # has duplicates No.182 and No.327
+
+# we can pull No.182 and No.327 out 
+
+pokemon_list[pokemon_list$No.==182,]
+pokemon_list[pokemon_list$No.==327,]
+
+#Both Pokemons have different types although they do have the same stats, we still decide to keep them in the data set
+```
+
+```{r}
+colnames(pokemon_list) <- c("No.","pokemon_name","type","locations_found","name",
+                             "abilities","hp","attack", "defence","sp_attack",
+                             "sp_defence","speed") 
+
+pokemon_list <- pokemon_list[,-5] # remove duplicate column
+
+col_order <- c("No.","pokemon_name","type",
+               "abilities","locations_found","hp","attack", 
+               "defence","sp_attack",
+               "sp_defence","speed")  # set up correct column order
+
+pokemon_list <- pokemon_list[, col_order] # organize the data set with correct column order
+
+pokemon_list <- pokemon_list%>%
+  mutate(No.=as.character(No.),
+         type=as.factor(type),
+         abilities=as.factor(abilities),
+         hp=as.numeric(hp),
+         attack=as.numeric(attack),
+         defence=as.numeric(defence),
+         sp_attack=as.numeric(sp_attack),
+         sp_defence=as.numeric(sp_defence),
+         speed=as.numeric(speed))
+
+summary(pokemon_list) 
+```
+
+```{r}
+pokemon_list$type <- str_replace_all(pokemon_list$type,
+                                     "(?<=[a-z])(?=[A-Z])", #find small letters connected with capital letter                                                             
+                                     "\n") # separate the pattern with space
+pokemon_list <-  pokemon_list%>%
+  separate(col=type,
+           into=c("type_1","type_2"), # separate the type column into two columns between space 
+           sep="\n")
+
+pokemon_list <-  pokemon_list%>%  
+  mutate(type_1=as.factor(type_1),  # change type_1 into factor
+         type_2=as.factor(type_2)) # change type_2 into factor
+
+print(unique(pokemon_list$type_1))  # we found a typo there is one category named poison and the other named posion
+print(unique(pokemon_list$type_2)) # no duplicates in this column, but NA does not help us too much let's change those NAs into None
+
+pokemon_list$type_1[pokemon_list$type_1=="Posion"] <- "Poison" # change type_1 "posion" into correct name 
+
+pokemon_list <- pokemon_list%>% 
+  mutate(type_2=as.character(type_2))%>%  
+  mutate(type_2=if_else(is.na(type_2),"None",type_2))%>% # change NAs to None
+  mutate(type_2=as.factor(type_2))
+
+summary(pokemon_list$type_2) # double check type_2 summary
+```
+
+```{r}
+pokemon_list_long <- pokemon_list%>%  
+  pivot_longer(cols=hp:speed,   # transform into long table
+               names_to="stats_type",
+               values_to="score")
+
+head(pokemon_list_long)
+```
+
+## Data Analysis 
+
+We can look at all the stats use boxplot for all the Pokemon 
+```{r,fig.width=8}
+ggplot(pokemon_list_long, aes(x = score , y = stats_type)) +
+  geom_boxplot() + 
+  theme_minimal()+
+  facet_wrap(~type_1)
+```
+
+```{r}
+library(viridis)
+library(hrbrthemes)
+
+par(mfrow=c(2,2))
+# Plot
+pokemon_list_long %>%
+  ggplot( aes(x=score, y=stats_type,fill=stats_type)) +
+    geom_boxplot() +
+    scale_fill_viridis(discrete = TRUE, alpha=0.8, option="A") +
+    theme_ipsum() +
+    theme(
+      legend.position="none",
+      plot.title = element_text(size=12)
+    ) +
+    ggtitle("All Pokemon in Galar Region Stats Boxplot") +
+    xlab("Stats Score")+
+    ylab("")
+```
+```{r}
+g3 <- pokemon_list_long %>%
+  filter(type_1=="Fairy" | type_2=="Fairy")%>%
+  ggplot( aes(x=score, y=stats_type,fill=stats_type)) +
+    geom_boxplot() +
+    scale_fill_viridis(discrete = TRUE, alpha=0.8, option="A") +
+    theme_ipsum() +
+    theme(
+      legend.position="none",
+      plot.title = element_text(size=12)
+    ) +
+    ggtitle("All Fairy Pokemon in Galar Region Stats Boxplot") +
+    xlab("Stats Score")+
+    ylab("")
+```
+
+```{r}
+g4 <- pokemon_list_long %>%
+  filter(type_1=="Dragon" | type_2=="Dragon")%>%
+  ggplot( aes(x=score, y=stats_type,fill=stats_type)) +
+    geom_boxplot() +
+    scale_fill_viridis(discrete = TRUE, alpha=0.8, option="A") +
+    theme_ipsum() +
+    theme(
+      legend.position="none",
+      plot.title = element_text(size=12)
+    ) +
+    ggtitle("All Dragon Pokemon in Galar Region Stats Boxplot") +
+    xlab("Stats Score")+
+    ylab("")
+```
+
+```{r,fig.width=8}
+library(ggpubr)
+ggarrange(g3, g4,
+          ncol = 2, nrow = 1)
+```
+
+```{r}
+primary_type <- pokemon_list%>%
+  group_by(type_1)%>%
+  summarise(count=n())%>%
+  arrange(-count)
+
+ggplot(data=primary_type, aes(x=type_1,y=count,fill=type_1))+
+  geom_bar(position="dodge",stat="identity") +
+  coord_flip()+
+  ggtitle("Primary Type in Galar Region")+
+  xlab("Primary Type")+
+  ylab("Number of Pokemons")
+```
+
+
+```{r}
+secondary_type <- pokemon_list%>%
+  group_by(type_2)%>%
+  summarise(count=n())%>%
+  arrange(-count)
+  
+ggplot(data=secondary_type, aes(x=type_2,y=count,fill=type_2))+
+  geom_bar(position="dodge",stat="identity") +
+  coord_flip()+
+  ggtitle("Secondary Type in Galar Region")+
+  xlab("Secondary Type")+
+  ylab("Number of Pokemons")
+```
+
+```{r}
+library(GGally)
+library(dplyr)
+pokemon_stats <- pokemon_list%>%
+  select(where(is.numeric))
+
+ggpairs(pokemon_stats) 
+```
+
+```{r}
+library(corrplot)
+pokemon_list %>%
+  select(where(is.numeric))%>%  # find all the numeric columns 
+  cor()%>%
+  corrplot(method = "number")
+```

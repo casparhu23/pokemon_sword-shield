@@ -1,0 +1,369 @@
+---
+title: "sword_shield_pokemon"
+author: "Caspar Hu"
+date: "1/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r,echo=FALSE}
+library(rvest)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+```
+
+## Web Scraping 
+```{r}
+link <- "https://www.serebii.net/swordshield/galarpokedex.shtml"
+pokemon_ss <- read_html(link) %>%  # web scraping
+  html_nodes("table.tab")%>%
+  html_table(fill=TRUE)%>%.[[2]]
+```
+
+```{r}
+link_2 <- "https://www.ign.com/wikis/pokemon-sword-shield/List_of_Pokemon_(Pokedex)#Galarian_Pokedex"
+pokemon_type <- read_html(link_2) %>%  # web scraping
+  html_nodes("table")%>%   
+  html_table(fill=TRUE)%>%.[[1]]
+```
+
+## Data Cleaning
+```{r}
+colnames(pokemon_ss)
+
+head(pokemon_ss)
+
+pokemon_ss <- pokemon_ss[,-6]   # remove sixth column
+pokemon_ss <- pokemon_ss[,-2:-3] # remove second, third column
+
+colnames(pokemon_ss) <- c("No.","Name","Abilities","HP","Attack","Defence","Sp_Attack","Sp.Defence","Speed")
+# change column name
+
+pokemon_ss <- pokemon_ss[-1:-2,] # remove first, second rows
+
+pokemon_ss <- na.omit(pokemon_ss) # remove all the NA rows 
+```
+
+```{r}
+pokemon_ss$No. <-  str_replace_all(pokemon_ss$No.,"\\#","") # remove # at the beginning of the No. column
+
+pokemon_ss$No. <- as.numeric(pokemon_ss$No.) # cahnge into numeric
+```
+```{r}
+unique(pokemon_ss$No.)   # there are 400 unique No.
+unique(pokemon_type$`#`) # there are 400 unique observations
+
+pokemon_list <- merge(pokemon_type, pokemon_ss, by.x = "#", by.y = "No.")
+
+colnames(pokemon_list) <- tolower(colnames(pokemon_list))
+
+pokemon_list <- pokemon_list%>%
+  rename(No.="#")
+  
+pokemon_list <- pokemon_list%>%  
+  rename(locations_found="location(s) found")# rename the column name
+
+unique(pokemon_list$No.) # there are 400 unique observations
+
+summary(as.factor(pokemon_list$No.)) # use factor we can see which # has duplicates No.182 and No.327
+
+# we can pull No.182 and No.327 out 
+
+pokemon_list[pokemon_list$No.==182,]
+pokemon_list[pokemon_list$No.==327,]
+
+#Both pokemons have different types although they do have the same stats, we still decide to keep them in the data set
+```
+
+```{r}
+summary(pokemon_list)
+head(pokemon_list)
+
+colnames(pokemon_list) <- c("No.","pokemon_name","type","locations_found","name",
+                             "abilities","hp","attack", "defence","sp_attack",
+                             "sp_defence","speed")
+
+
+pokemon_list <- pokemon_list[,-5] # remove duplicate column
+
+col_order <- c("No.","pokemon_name","type",
+               "abilities","locations_found","hp","attack", 
+               "defence","sp_attack",
+               "sp_defence","speed")
+
+pokemon_list <- pokemon_list[, col_order]
+
+pokemon_list <- pokemon_list%>%
+  mutate(No.=as.character(No.),
+         type=as.factor(type),
+         abilities=as.factor(abilities),
+         hp=as.numeric(hp),
+         attack=as.numeric(attack),
+         defence=as.numeric(defence),
+         sp_attack=as.numeric(sp_attack),
+         sp_defence=as.numeric(sp_defence),
+         speed=as.numeric(speed))
+
+summary(pokemon_list)
+```
+
+```{r}
+pokemon_list$type <- str_replace_all(pokemon_list$type,
+                                     "(?<=[a-z])(?=[A-Z])", #find small letters connected with capital letter                                                             
+                                     "\n") # separate the pattern with space
+pokemon_list <-  pokemon_list%>%
+  separate(col=type,
+           into=c("type_1","type_2"), # separate the type column into two columns between space 
+           sep="\n")
+
+pokemon_list <-  pokemon_list%>%  
+mutate(type_1=as.factor(type_1),
+         type_2=as.factor(type_2))
+
+summary(pokemon_list)
+
+print(unique(pokemon_list$type_1))  # we found a typo there is one category named poison and the other named posion
+print(unique(pokemon_list$type_2)) # no duplicates in this column, but NA does not help us too much let's change those NAs into None
+
+pokemon_list$type_1[pokemon_list$type_1=="Posion"] <- "Poison" # change type_1 "posion" into correct name 
+
+pokemon_list <- pokemon_list%>%
+  mutate(type_2=as.character(type_2))%>%
+  mutate(type_2=if_else(is.na(type_2),"None",type_2))%>% # change NAs to None
+  mutate(type_2=as.factor(type_2))
+```
+
+```{r}
+pokemon_list_long <- pokemon_list%>%  
+  pivot_longer(cols=hp:speed,   # transform into long table
+               names_to="stats_type",
+               values_to="score")
+```
+
+
+## Data Analysis 
+
+Personally I love water type Pokemon, so we are going to filter all the water type pokemon first.
+
+```{r}
+water <- pokemon_list%>%
+  filter(type_1=="Water" | type_2=="Water")
+
+summary(water)
+
+
+
+```
+
+
+
+```{r}
+ggplot(water, aes(x = attack , y = defence , label = pokemon_name)) +
+  ggrepel::geom_text_repel(size = 2) +
+  theme_minimal()
+```
+```{r,fig.width=8}
+ggplot(pokemon_list_long, aes(x = score , y = stats_type)) +
+  geom_boxplot() + 
+  theme_minimal()+
+  facet_wrap(~type_1)
+```
+```{r}
+library(viridis)
+library(hrbrthemes)
+# Plot
+pokemon_list_long %>%
+  ggplot( aes(x=score, y=stats_type,fill=stats_type)) +
+    geom_boxplot() +
+    scale_fill_viridis(discrete = TRUE, alpha=0.8, option="A") +
+    geom_jitter(color="black", size=0.4, alpha=0.) +
+    theme_ipsum() +
+    theme(
+      legend.position="none",
+      plot.title = element_text(size=12)
+    ) +
+    ggtitle("All Pokemon in Galar Region Stats Boxplot") +
+    xlab("Stats Score")+
+    ylab("")
+```
+```{r}
+# Plot
+pokemon_list_long %>%
+  ggplot( aes(x=score, y=stats_type,fill=stats_type)) +
+    geom_violin(width=1) +
+    geom_boxplot(width=0.1, color="grey", alpha=0.2) +
+    scale_fill_viridis(discrete = TRUE) +
+    theme_ipsum() +
+    theme(
+      legend.position="none",
+      plot.title = element_text(size=12)
+    ) +
+    ggtitle("All Pokemon in Galar Region Stats Violin Boxplot (Wrapped)") +
+    xlab("Stats Score")+
+    ylab("")
+```
+
+```{r}
+primary_type <- pokemon_list%>%
+  group_by(type_1)%>%
+  summarise(count=n())%>%
+  arrange(-count)
+
+g1 <- ggplot(data=primary_type, aes(x=type_1,y=count,fill=type_1))+
+  geom_bar(position="dodge",stat="identity") +
+  coord_flip()+
+  ggtitle("Primary Type in Galar Region")+
+  xlab("Primary Type")+
+  ylab("Number of Pokemons")
+  
+
+#sort the bargraph
+ggplot(data=primary_type, aes(x=reorder(type_1,-count),
+                              y=count,fill=type_1))+
+  geom_bar(position="dodge",stat="identity") +
+  coord_flip()+
+  ggtitle("Primary Type in Galar Region")
+
+secondary_type <- pokemon_list%>%
+  group_by(type_2)%>%
+  summarise(count=n())%>%
+  arrange(-count)
+  
+g2 <- ggplot(data=secondary_type, aes(x=type_2,y=count,fill=type_2))+
+  geom_bar(position="dodge",stat="identity") +
+  coord_flip()+
+  ggtitle("Secondary Type in Galar Region")+
+  xlab("Secondary Type")+
+  ylab("Number of Pokemons")
+  
+#sort the bargraph
+ggplot(data=secondary_type, aes(x=reorder(type_2,-count),
+                              y=count,fill=type_2))+
+  geom_bar(position="dodge",stat="identity") +
+  coord_flip()+
+  ggtitle("Secondary Type in Galar Region")
+
+g1 # Primary Type Count
+g2 # Secondary Type Count
+
+```
+
+```{r}
+library(corrplot)
+pokemon_list %>%
+  select(where(is.numeric))%>%  # find all the numeric columns 
+  cor()%>%
+  corrplot(method = "number")
+```
+```{r}
+library(GGally)
+library(dplyr)
+pokemon_stats <- pokemon_list%>%
+  select(where(is.numeric))
+
+ggpairs(pokemon_stats) 
+```
+
+```{r}
+ggplot(pokemon_list, aes(x=attack, y=sp_attack)) + 
+    geom_point(size=2,color="blue")
+```
+```{r}
+library(shiny)
+
+# Use a fluid Bootstrap layout
+fluidPage(    
+  
+  # Give the page a title
+  titlePanel("Pokemons by Primary Type"),
+  
+  # Generate a row with a sidebar
+  sidebarLayout(      
+    
+    # Define the sidebar with one input
+    sidebarPanel(
+      selectInput("type_1","Primary Type:", 
+                  choices=unique(pokemon_list$type_1)),
+      hr(),
+      helpText("Data from IGN")
+    ),
+    
+    # Create a spot for the scatterplot
+    mainPanel(
+      plotOutput("Plot")  
+    )
+    
+  )
+)
+
+server <- function(input, output) {
+  
+  # Define a server for the Shiny app
+function(input, output) {
+  
+  # Fill in the spot we created for a plot
+  output$Plot <- renderPlot({
+    
+    # Render a barplot
+    ggplot(data=pokemon_list,
+           aes(x=attack,y=defense,color=input))+
+      geom_point()
+  })
+}
+}
+shinyApp(ui = ui, server = server)
+```
+
+
+
+```{r}
+ggplot(water, aes(x = attack , y = type_2)) +
+  geom_boxplot() + 
+  theme_minimal()
+```
+
+```{r}
+# Libraries
+library(tidyverse)
+library(hrbrthemes)
+library(viridis)
+library(plotly)
+
+# Matrix format
+mat <- water
+rownames(mat) <- mat[,2]
+mat <- mat[,7:12]
+mat <- as.matrix(mat)
+
+library(heatmaply)
+heatmap(mat, Colv = NA, Rowv = NA, scale="column")
+
+p <- heatmaply(mat, 
+        dendrogram = "none",
+        xlab = "", ylab = "", 
+        main = "",
+        scale = "column",
+        margins = c(5,5),
+        grid_color = "white",
+        grid_width = 1,
+        titleX = FALSE,
+        hide_colorbar = TRUE,
+        branches_lwd = 1,
+        label_names = c("Country", "Feature:", "Value"),
+        fontsize_row = 5, fontsize_col = 5,
+        labCol = colnames(mat),
+        labRow = rownames(mat),
+        heatmap_layers = theme(axis.line=element_blank())
+        )
+p
+```
+
+```{r}
+
+```
+
