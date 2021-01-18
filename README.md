@@ -32,8 +32,7 @@ sets are from two different website. One is called `serebii.net`that
 collects Pokemon stats and info and the other website is named `IGN`, a
 famous games review website.
 
-![“Pokemon Sword &
-Shield”](/Users/Caspar/Documents/GitHub_Project/pokemon_sword-shield/images/poke_1.jpg)
+![](https://assets.pokemon.com/assets/cms2/img/video-games/_tiles/strategy/sword-shield/starters-guide/01/sword-shield-starters-guide-169-en.jpg)
 
 ## Web Scraping
 
