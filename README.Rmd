@@ -259,3 +259,389 @@ pokemon_list %>%
   cor()%>%
   corrplot(method = "number")
 ```
+
+## K-means cluster 
+
+Let's use K-means cluster to find out the segments in this pokemon data set
+
+```{r}
+library(tidyr)
+library(cluster)
+library(factoextra) # clustering algorithms & visualization
+library(sparcl) # Sparse Clustering
+```
+
+```{r Scale Data}
+pokemon_new <- pokemon_list[,c("pokemon_name","hp","attack","defence","sp_attack","sp_defence","speed")]
+# scale stats data 
+pokemon_scale <- scale(pokemon_new[,2:7])
+
+# Add pokemon names back to data frame
+pokemon_new <- cbind.data.frame(pokemon_new$pokemon_name, pokemon_scale)  
+
+names(pokemon_new)[1] <- "pokemon_name"  # Fix name of team column
+```
+
+### Initial Clustering
+
+```{r fit kmeans}
+set.seed(111111) # Set seed for reproducibility
+fit_1 <- kmeans(x = pokemon_new[,2:7], # Set data as explantory variables 
+                centers = 4,  # Set number of clusters
+                nstart = 25, # Set number of starts
+                iter.max = 100 ) # Set maximum number of iterations to use
+```
+```{r Extract results}
+# Extract clusters
+clusters_1 <- fit_1$cluster
+
+# Extract centers
+centers_1 <- fit_1$centers
+
+```
+
+Lets first check how many samples in each cluster:
+
+```{r Check cluster numbers}
+# Check samples per cluster
+summary(as.factor(clusters_1))
+```
+
+Here we see that we have 83 samples in cluster 1, 92 in cluster 2, 64 in cluster 3, and 163 in cluster 4. We can view the pokemons in each cluster as follows:
+
+```{r Check pokemons per cluster 1}
+# Check pokemons in cluster 1
+cat("Cluster 1 Pokemon:\n")
+pokemon_new$pokemon_name[clusters_1 == 1]
+# Check teams in cluster 2
+cat("Cluster 2 Pokemon:\n")
+pokemon_new$pokemon_name[clusters_1 == 2]
+# Check teams in cluster 3
+cat("Cluster 3 Pokemon:\n")
+pokemon_new$pokemon_name[clusters_1 == 3]
+# Check teams in cluster 4
+cat("Cluster 4 Pokemon:\n")
+pokemon_new$pokemon_name[clusters_1 == 4]
+```
+
+```{r}
+# Create vector of clusters
+cluster <- c(1: 4)
+# Extract centers
+center_df <- data.frame(cluster, centers_1)
+
+# Reshape the data
+center_reshape <- gather(center_df, # set the data 
+                         stats, # the col name for the select columns' name
+                         values, # the col name for the select columns' value
+                         hp:speed) # select columns 
+
+```
+
+```{r,echo=FALSE}
+
+g_heat_1 <- ggplot(data = center_reshape, aes(x = stats, y = cluster, fill = values)) +
+  scale_y_continuous(breaks = seq(1, 4, by = 1)) +
+  geom_tile() +
+  coord_equal() + 
+  theme_set(theme_bw(base_size = 22) ) +
+  scale_fill_gradient2(low = "blue", # Choose low color
+                       mid = "white", # Choose mid color
+                       high = "red", # Choose high color
+                       midpoint =0, # Choose mid point
+                       space = "Lab", 
+                       na.value ="grey", # Choose NA value
+                       guide = "colourbar", # Set color bar
+                       aesthetics = "fill") + # Select aesthetics to apply
+  coord_flip()
+g_heat_1
+
+```
+
+Overall, cluster 1 performs much more better than other three clusters. Pokemons of cluster 1 are generally faster compared to pokemons in other three clusters. Pokemons of cluster 2 are better at physical attack and has a higher health value. Pokemons of cluster 3 are good at dealing with special attack due to higher special defense. And cluster 4 performs generally worse at all six stats.
+
+### Method 1 : Calculate Optimal Cluster Number (Elbow Method)
+
+Let's try to calculate the optimal cluster number to see if we have a better set of clusters.   
+In general, while we increase the number of clusters, error will always decrease. The optimal cluster number is the one where rate of improvement in performance begins to decrease. And that is how we can find the optimal cluster number.
+
+```{r Check Cluster Number}
+# Create function to try different cluster numbers
+kmean_withinss <- function(k) {
+  cluster <- kmeans( x = pokemon_new[,2:7],  # Set data to use
+                    centers = k,  # Set number of clusters as k, changes with input into function
+                    nstart = 25, # Set number of starts
+                    iter.max = 100) # Set max number of iterations
+  return (cluster$tot.withinss) # Return cluster error/within cluster sum of squares
+}
+
+# Set maximum cluster number
+max_k <- 20
+# Run algorithm over a range of cluster numbers
+wss <- sapply(2:max_k, kmean_withinss)
+
+# Create a data frame to plot the graph
+elbow <-data.frame(2:max_k, wss)
+
+# Plot the graph with gglop
+g_1 <- ggplot(elbow, aes(x = X2.max_k, y = wss)) +  
+  theme_set(theme_bw(base_size = 22) ) +
+  geom_point(color = "blue") +
+  geom_line() +
+  scale_x_continuous(breaks = seq(1, 20, by = 1)) +
+  labs(x = "Number of Clusters", y="Within Cluster \nSum of Squares") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+g_1
+
+```
+
+It seems that the optimal number of clusters is five. So, let's try it out
+
+```{r fit kmeans 2}
+set.seed(111111) # Set seed for reproducibility
+fit_2 <- kmeans(x = pokemon_new[,2:7], # Set data as explantory variables 
+                centers = 5,  # Set number of clusters
+                nstart = 25, # Set number of starts
+                iter.max = 100 ) # Set maximum number of iterations to use
+```
+
+```{r Extract results 2}
+# Extract clusters
+clusters_2 <- fit_2$cluster
+
+# Extract centers
+centers_2 <- fit_2$centers
+
+# Check samples per cluster
+summary(as.factor(clusters_2))
+
+```
+
+```{r Check pokemons per cluster 2}
+# Check pokemons in cluster 1
+cat("Cluster 1 Pokemon:\n")
+pokemon_new$pokemon_name[clusters_2 == 1]
+# Check pokemons in cluster 2
+cat("Cluster 2 Pokemon:\n")
+pokemon_new$pokemon_name[clusters_2 == 2]
+# Check pokemons in cluster 3
+cat("Cluster 3 Pokemon:\n")
+pokemon_new$pokemon_name[clusters_2 == 3]
+# Check pokemons in cluster 4
+cat("Cluster 4 Pokemon:\n")
+pokemon_new$pokemon_name[clusters_2 == 4]
+# Check pokemons in cluster 4
+cat("Cluster 5 Pokemon:\n")
+pokemon_new$pokemon_name[clusters_2 == 5]
+```
+
+Lets check the quality of our clustering solution using a silhouette plot:
+
+```{r Quality Check, fig.width=8}
+dis = dist(pokemon_new[2:7])^2
+sil = silhouette (fit_1$cluster , dis, full = TRUE)
+plot(sil)
+sil = silhouette (fit_2$cluster , dis, full = TRUE)
+plot(sil)
+
+# silhouette coefficients (as these values are referred to as) near +1 indicate that the sample is far away from the neighboring clusters. A value of 0 indicates that the sample is on or very close to the decision boundary between two neighboring clusters and negative values indicate that those samples might have been assigned to the wrong cluster.
+```
+
+From four clusters' silhouette plot, we can see both cluster 2 and 3 have samples that do not belong to their groups, while it is even worse in five clusters' silhouette plot, Clusters 1, 2 and 5 have samples that do not belong to their groups. 
+
+### Checking Clustering Quality
+
+We use cluster cardinality to see number of samples in each cluster
+```{r Clustering Cardinality}
+plot_clust_cardinality <- cbind.data.frame(clusters_1, clusters_2) # Join clusters with  k =4 and k=6
+names(plot_clust_cardinality) <- c("k_4", "k_5") # Set names
+# Create bar plots
+g_2 <- ggplot(plot_clust_cardinality, aes( x = factor(k_4))) + # Set x as cluster values
+  geom_bar(stat = "count", fill = "steelblue") + # Use geom_bar with stat = "count" to count observations
+    labs(x = "Cluster Number", y="Points in Cluster", # Set labels
+         title = "Cluster Cardinality (k = 4)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+
+g_3 <- ggplot(plot_clust_cardinality, aes( x = factor(k_5))) + # Set x as cluster values
+  geom_bar(stat = "count", fill = "steelblue") + # Use geom_bar with stat = "count" to count observations
+    labs(x = "Cluster Number", y="Points in Cluster", # Set labels
+         title = "Cluster Cardinality (k = 5)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+g_2
+g_3
+```
+When k =4, only cluster 4 has significant amount of samples compared to other three clusters, which worths asking questions to analyze further. However, 5 clusters (k=5) did not help to solve this issue either. 
+
+Next we will check on cluster magnitude by visualizing the within cluster sum of squares for each cluster to see how good a fit each of the clusters was fit. 
+
+
+```{r Check Cluster Magnitude}
+k_4_mag <- cbind.data.frame(c(1:4), fit_1$withinss) # Extract within cluster sum of squares
+names(k_4_mag) <- c("cluster", "withinss") # Fix names for plot data
+g_4 <- ggplot(k_4_mag, aes(x = cluster, y = withinss)) + # Set x as cluster, y as withinss
+  geom_bar(stat = "identity", fill = "steelblue") + # Use geom bar and stat = "identity" to plot values directly
+   labs(x = "Cluster Number", y="Total Point to Centroid Distance", # Set labels
+         title = "Cluster Magnitude (k = 4)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+  
+k_5_mag <- cbind.data.frame(c(1:5), fit_2$withinss) # Extract within cluster sum of squares
+names(k_5_mag) <- c("cluster", "withinss") # Fix names for plot data
+g_5 <- ggplot(k_5_mag, aes(x = cluster, y = withinss)) +  # Set x as cluster, y as withinss
+  geom_bar(stat = "identity", fill = "steelblue") + # Use geom bar and stat = "identity" to plot values directly
+   labs(x = "Cluster Number", y="Total Point to Centroid Distance", # Set labels
+         title = "Cluster Magnitude (k = 5)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+
+g_4
+g_5
+```
+
+When we have 4 clusters (k=4), both cluster 3 and 4 have similarities on the cluster sum of squares. Cluster 1 has the smallest value among all, while cluster 3 value is a little higher than cluster 1. 
+
+When we have 5 clusters (k=5), cluster 4 has the highest value among all, while both cluster 1 and 5 have similarities on the cluster sum of squares. However, cluster 3 has the lowest value. 
+
+And we also see with the number of cluster increasing, the cluster sum of squares actually decreases, which is the expected results we want to see. 
+
+We can also plot both magnitude and cardinality on the graphs to see the relationship
+```{r Magnitude v Cardinality}
+k_4_dat <- cbind.data.frame(table(clusters_1), k_4_mag[,2]) # Join magnitude and cardinality
+names(k_4_dat) <- c("cluster", "cardinality", "magnitude") # Fix plot data names
+
+g_6 <- ggplot(k_4_dat, aes(x = cardinality, y = magnitude, color = cluster)) + # Set aesthetics
+  geom_point(alpha = 0.8, size  = 4) +  # Set geom point for scatter
+ geom_smooth(aes(x = cardinality, y = magnitude), method = "lm",
+              se = FALSE, inherit.aes = FALSE, alpha = 0.5) + # Set trend  line
+  labs(x = "Cluster Cardinality", y="Total Point to Centroid Distance", # Set labels
+         title = "Cluster Magnitude vs Cardinality \n(k = 4)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+
+k_5_dat <- cbind.data.frame(table(clusters_2), k_5_mag[,2]) # Join magnitude and cardinality
+names(k_5_dat) <- c("cluster", "cardinality", "magnitude") # Fix plot data names
+
+g_7 <- ggplot(k_5_dat, aes(x = cardinality, y = magnitude, color = cluster)) + # Set aesthetics
+  geom_point(alpha = 0.8, size = 4) +  # Set geom point for scatter
+  geom_smooth(aes(x = cardinality, y = magnitude), method = "lm",
+              se = FALSE, inherit.aes = FALSE, alpha = 0.5) + # Set trend  line
+  labs(x = "Cluster Cardinality", y="Total Point to Centroid Distance", # Set labels
+         title = "Cluster Magnitude vs Cardinality \n(k = 5)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+
+g_6
+g_7
+```
+
+It seems that five cluster actually shows us a better positive relationship between magnitude and cardinality compared to four cluster. And since cluster 3(k=5) is far away from the fitted line, *cluster 3* might be anomalous clusters among all.  
+
+Let's look at the heat map for all six stats on five clusters
+```{r}
+# Create vector of clusters
+cluster2 <- c(1: 5)
+# Extract centers
+center_df_2 <- data.frame(cluster2, centers_2)
+
+# Reshape the data
+
+center_reshape_2 <- gather(center_df_2, # set the data 
+                         stats, # the col name for the select columns' name
+                         values, # the col name for the select columns' value
+                         hp:speed) # select columns 
+
+g_heat_2 <- ggplot(data = center_reshape_2, aes(x = stats, y = cluster2, fill = values)) +
+  scale_y_continuous(breaks = seq(1, 5, by = 1)) +
+  geom_tile() +
+  coord_equal() + 
+  theme_set(theme_bw(base_size = 22) ) +
+  scale_fill_gradient2(low = "blue", # Choose low color
+                       mid = "white", # Choose mid color
+                       high = "red", # Choose high color
+                       midpoint =0, # Choose mid point
+                       space = "Lab", 
+                       na.value ="grey", # Choose NA value
+                       guide = "colourbar", # Set color bar
+                       aesthetics = "fill") + # Select aesthetics to apply
+  coord_flip()
+g_heat_2
+
+```
+
+It seems that cluster 3 is generally better than any other clusters and cluster 4 performs the lowest in terms of all the stats values. We can also subset our original pokemon by each cluster number and create five cluster subset. 
+
+```{r}
+group_1 <- pokemon_list[clusters_2==1,]  # subset cluster 1 
+group_2 <- pokemon_list[clusters_2==2,]  # subset cluster 2 
+group_3 <- pokemon_list[clusters_2==3,]  # subset cluster 3
+group_4 <- pokemon_list[clusters_2==4,]  # subset cluster 4
+group_5 <- pokemon_list[clusters_2==5,]  # subset cluster 5
+```
+
+```{r}
+make_ridge_plot <- function(data){
+  
+  data <- data %>%
+      pivot_longer(cols=hp:speed,   # transform into long table
+                   names_to="stats_type",
+                   values_to="score")
+  
+  ggplot(data,aes(x=score, y=stats_type,fill=stats_type)) +
+    geom_boxplot() +
+    scale_fill_viridis(discrete = TRUE, alpha=0.8, option="A") +
+    geom_jitter(color="black", size=0.4, alpha=0.) +
+    theme_ipsum() +
+    theme(
+      legend.position="none",
+      plot.title = element_text(size=12)
+    ) +
+    ggtitle("All Pokemon in Galar Region Stats Boxplot") +
+    xlab("Stats Score")+
+    ylab("")
+}
+
+rp3 <- make_ridge_plot(group_3)
+rp4 <- make_ridge_plot(group_4)
+```
+
+```{r,fig.width=10,echo=FALSE}
+library(ggpubr)
+ggarrange(rp3, rp4,
+          ncol = 2, nrow = 1)
+```
+
+### Method 2 : Calculate Optimal Cluster Number (Gap Statistic Method)
+```{r}
+library(cluster)
+# compute gap statistic
+set.seed(111111)
+gap_stat <- clusGap(pokemon_new[,2:7], FUN = kmeans, nstart = 25,
+                    K.max = 10, B = 50)
+# Print the result
+print(gap_stat, method = "firstmax")
+
+fviz_gap_stat(gap_stat)
+```
+
+If we use gap statistic method, the optimal cluster will be three only. We will not spend more time on this method at this time. 

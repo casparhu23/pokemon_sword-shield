@@ -645,3 +645,811 @@ pokemon_list %>%
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+
+## K-means cluster
+
+Let’s use K-means cluster to find out the segments in this pokemon data
+set
+
+``` r
+library(tidyr)
+library(cluster)
+library(factoextra) # clustering algorithms & visualization
+```
+
+    ## Welcome! Want to learn more? See two factoextra-related books at https://goo.gl/ve3WBa
+
+``` r
+library(sparcl) # Sparse Clustering
+```
+
+``` r
+pokemon_new <- pokemon_list[,c("pokemon_name","hp","attack","defence","sp_attack","sp_defence","speed")]
+# scale stats data 
+pokemon_scale <- scale(pokemon_new[,2:7])
+
+# Add pokemon names back to data frame
+pokemon_new <- cbind.data.frame(pokemon_new$pokemon_name, pokemon_scale)  
+
+names(pokemon_new)[1] <- "pokemon_name"  # Fix name of team column
+```
+
+### Initial Clustering
+
+``` r
+set.seed(111111) # Set seed for reproducibility
+fit_1 <- kmeans(x = pokemon_new[,2:7], # Set data as explantory variables 
+                centers = 4,  # Set number of clusters
+                nstart = 25, # Set number of starts
+                iter.max = 100 ) # Set maximum number of iterations to use
+```
+
+``` r
+# Extract clusters
+clusters_1 <- fit_1$cluster
+
+# Extract centers
+centers_1 <- fit_1$centers
+```
+
+Lets first check how many samples in each cluster:
+
+``` r
+# Check samples per cluster
+summary(as.factor(clusters_1))
+```
+
+    ##   1   2   3   4 
+    ##  83  92  64 163
+
+Here we see that we have 83 samples in cluster 1, 92 in cluster 2, 64 in
+cluster 3, and 163 in cluster 4. We can view the pokemons in each
+cluster as follows:
+
+``` r
+# Check pokemons in cluster 1
+cat("Cluster 1 Pokemon:\n")
+```
+
+    ## Cluster 1 Pokemon:
+
+``` r
+pokemon_new$pokemon_name[clusters_1 == 1]
+```
+
+    ##  [1] "Thwackey"          "Raboot"            "Cinderace"        
+    ##  [4] "Drizzile"          "Inteleon"          "Butterfree"       
+    ##  [7] "Unfezant"          "Thievul"           "Galarian Linoone" 
+    ## [10] "Dubwool"           "Shiftry"           "Liepard"          
+    ## [13] "Boltund"           "Diggersby"         "Cinccino"         
+    ## [16] "Roselia"           "Roserade"          "Galvantula"       
+    ## [19] "Manectric"         "Ninetales"         "Arcanine"         
+    ## [22] "Vanilluxe"         "Glalie"            "Froslass"         
+    ## [25] "Xatu"              "Ninjask"           "Hitmonlee"        
+    ## [28] "Klinklang"         "Gallade"           "Cherrim"          
+    ## [31] "Haunter"           "Gengar"            "Basculin"         
+    ## [34] "Dugtrio"           "Swoobat"           "Noivern"          
+    ## [37] "Barraskewda"       "Persian"           "Ribombee"         
+    ## [40] "Raichu"            "Jolteon"           "Flareon"          
+    ## [43] "Espeon"            "Flapple"           "Meowstic"         
+    ## [46] "Slurpuff"          "Toxicroak"         "Salazzle"         
+    ## [49] "Whimsicott"        "Accelgor"          "Drapion"          
+    ## [52] "Sneasel"           "Weavile"           "Maractus"         
+    ## [55] "Sigilyph"          "Lucario"           "Mimikyu"          
+    ## [58] "Qwilfish"          "Cramorant"         "Toxtricity"       
+    ## [61] "Durant"            "Heatmor"           "Heliolisk"        
+    ## [64] "Hawlucha"          "Flygon"            "Galarian Ponyta"  
+    ## [67] "Galarian Rapidash" "Indeedee"          "Morepeko"         
+    ## [70] "Togedemaru"        "Galarian Mr. Mime" "Duraludon"        
+    ## [73] "Rotom"             "Charmeleon"        "Charizard"        
+    ## [76] "Silvally"          "Hydreigon"         "Hakamo-o"         
+    ## [79] "Drakloak"          "Dragapult"         "Zacian"           
+    ## [82] "Zamazenta"         "Eternatus"
+
+``` r
+# Check teams in cluster 2
+cat("Cluster 2 Pokemon:\n")
+```
+
+    ## Cluster 2 Pokemon:
+
+``` r
+pokemon_new$pokemon_name[clusters_1 == 2]
+```
+
+    ##  [1] "Rillaboom"           "Charjabug"           "Corviknight"        
+    ##  [4] "Greedent"            "Obstagoon"           "Drednaw"            
+    ##  [7] "Tsareena"            "Piloswine"           "Mamoswine"          
+    ## [10] "Mudbray"             "Mudsdale"            "Crustle"            
+    ## [13] "Golurk"              "Bewear"              "Abomasnow"          
+    ## [16] "Kingler"             "Quagsire"            "Crawdaunt"          
+    ## [19] "Hitmonchan"          "Pangoro"             "Drifblim"           
+    ## [22] "Skuntank"            "Seismitoad"          "Machoke"            
+    ## [25] "Machamp"             "Gyarados"            "Seaking"            
+    ## [28] "Octillery"           "Cloyster"            "Garbodor"           
+    ## [31] "Centiskorch"         "Carkol"              "Coalossal"          
+    ## [34] "Excadrill"           "Boldore"             "Gigalith"           
+    ## [37] "Gurdurr"             "Conkeldurr"          "Steelix"            
+    ## [40] "Perrserker"          "Gourgeist"           "Leafeon"            
+    ## [43] "Appletun"            "Wobbuffet"           "Sirfetch’d"         
+    ## [46] "Lanturn"             "Galarian Stunfisk"   "Whiscash"           
+    ## [49] "Gastrodon"           "Golisopod"           "Barbaracle"         
+    ## [52] "Grimmsnarl"          "Bisharp"             "Throh"              
+    ## [55] "Sawk"                "Galarian Weezing"    "Sudowoodo"          
+    ## [58] "Munchlax"            "Snorlax"             "Rhyhorn"            
+    ## [61] "Rhydon"              "Rhyperior"           "Escavalier"         
+    ## [64] "Beartic"             "Braviary"            "Mandibuzz"          
+    ## [67] "Malamar"             "Copperajah"          "Sandaconda"         
+    ## [70] "Hippowdon"           "Fraxure"             "Haxorus"            
+    ## [73] "Doublade"            "Trevenant"           "Passimian"          
+    ## [76] "Falinks"             "Grapploct"           "Wailmer"            
+    ## [79] "Wailord"             "Avalugg"             "Dhelmise"           
+    ## [82] "Lapras"              "Solrock"             "Galarian Darmanitan"
+    ## [85] "Stonejourner"        "Dracozolt"           "Arctozolt"          
+    ## [88] "Dracovish"           "Arctovish"           "Pupitar"            
+    ## [91] "Tyranitar"           "Zweilous"
+
+``` r
+# Check teams in cluster 3
+cat("Cluster 3 Pokemon:\n")
+```
+
+    ## Cluster 3 Pokemon:
+
+``` r
+pokemon_new$pokemon_name[clusters_1 == 3]
+```
+
+    ##  [1] "Orbeetle"         "Vikavolt"         "Noctowl"          "Ludicolo"        
+    ##  [5] "Gloom"            "Vileplume"        "Bellossom"        "Pelipper"        
+    ##  [9] "Claydol"          "Musharna"         "Hitmontop"        "Klang"           
+    ## [13] "Vespiquen"        "Bronzong"         "Gardevoir"        "Eldegoss"        
+    ## [17] "Dusclops"         "Dusknoir"         "Milotic"          "Pyukumuku"       
+    ## [21] "Alcremie"         "Ferrothorn"       "Vaporeon"         "Umbreon"         
+    ## [25] "Glaceon"          "Sylveon"          "Aromatisse"       "Araquanid"       
+    ## [29] "Scrafty"          "Shuckle"          "Galarian Corsola" "Cursola"         
+    ## [33] "Hatterene"        "Clefable"         "Togetic"          "Togekiss"        
+    ## [37] "Gothorita"        "Gothitelle"       "Duosion"          "Reuniclus"       
+    ## [41] "Beheeyem"         "Chandelure"       "Torkoal"          "Jellicent"       
+    ## [45] "Toxapex"          "Runerigus"        "Cofagrigus"       "Aegislash"       
+    ## [49] "Polteageist"      "Shiinotic"        "Oranguru"         "Drampa"          
+    ## [53] "Turtonator"       "Frosmoth"         "Pinchurchin"      "Mantyke"         
+    ## [57] "Mantine"          "Lunatone"         "Mr. Rime"         "Eiscue"          
+    ## [61] "Type: Null"       "Sliggoo"          "Goodra"           "Kommo-o"
+
+``` r
+# Check teams in cluster 4
+cat("Cluster 4 Pokemon:\n")
+```
+
+    ## Cluster 4 Pokemon:
+
+``` r
+pokemon_new$pokemon_name[clusters_1 == 4]
+```
+
+    ##   [1] "Grookey"             "Scorbunny"           "Sobble"             
+    ##   [4] "Blipbug"             "Dottler"             "Caterpie"           
+    ##   [7] "Metapod"             "Grubbin"             "Hoothoot"           
+    ##  [10] "Rookidee"            "Corvisquire"         "Skwovet"            
+    ##  [13] "Pidove"              "Tranquill"           "Nickit"             
+    ##  [16] "Galarian Zigzagoon"  "Wooloo"              "Lotad"              
+    ##  [19] "Lombre"              "Seedot"              "Nuzleaf"            
+    ##  [22] "Chewtle"             "Purrloin"            "Yamper"             
+    ##  [25] "Bunnelby"            "Minccino"            "Bounsweet"          
+    ##  [28] "Steenee"             "Oddish"              "Budew"              
+    ##  [31] "Wingull"             "Joltik"              "Electrike"          
+    ##  [34] "Vulpix"              "Growlithe"           "Vanillite"          
+    ##  [37] "Vanillish"           "Swinub"              "Delibird"           
+    ##  [40] "Snorunt"             "Baltoy"              "Dwebble"            
+    ##  [43] "Golett"              "Munna"               "Natu"               
+    ##  [46] "Stufful"             "Snover"              "Krabby"             
+    ##  [49] "Wooper"              "Corphish"            "Nincada"            
+    ##  [52] "Shedinja"            "Tyrogue"             "Pancham"            
+    ##  [55] "Klink"               "Combee"              "Bronzor"            
+    ##  [58] "Ralts"               "Kirlia"              "Drifloon"           
+    ##  [61] "Gossifleur"          "Cherubi"             "Stunky"             
+    ##  [64] "Tympole"             "Palpitoad"           "Duskull"            
+    ##  [67] "Machop"              "Gastly"              "Magikarp"           
+    ##  [70] "Goldeen"             "Remoraid"            "Shellder"           
+    ##  [73] "Feebas"              "Wishiwashi"          "Trubbish"           
+    ##  [76] "Sizzlipede"          "Rolycoly"            "Diglett"            
+    ##  [79] "Drilbur"             "Roggenrola"          "Timburr"            
+    ##  [82] "Woobat"              "Noibat"              "Onix"               
+    ##  [85] "Arrokuda"            "Galarian Meowth"     "Meowth"             
+    ##  [88] "Milcery"             "Cutiefly"            "Ferroseed"          
+    ##  [91] "Pumpkaboo"           "Pichu"               "Pikachu"            
+    ##  [94] "Eevee"               "Applin"              "Espurr"             
+    ##  [97] "Swirlix"             "Spritzee"            "Dewpider"           
+    ## [100] "Wynaut"              "Galarian Farfetch’d" "Chinchou"           
+    ## [103] "Croagunk"            "Scraggy"             "Barboach"           
+    ## [106] "Shellos"             "Wimpod"              "Binacle"            
+    ## [109] "Impidimp"            "Morgrem"             "Hatenna"            
+    ## [112] "Hattrem"             "Salandit"            "Pawniard"           
+    ## [115] "Koffing"             "Bonsly"              "Cleffa"             
+    ## [118] "Clefairy"            "Togepi"              "Cottonee"           
+    ## [121] "Gothita"             "Solosis"             "Karrablast"         
+    ## [124] "Shelmet"             "Elgyem"              "Cubchoo"            
+    ## [127] "Rufflet"             "Vullaby"             "Skorupi"            
+    ## [130] "Litwick"             "Lampent"             "Inkay"              
+    ## [133] "Sableye"             "Mawile"              "Riolu"              
+    ## [136] "Cufant"              "Frillish"            "Mareanie"           
+    ## [139] "Toxel"               "Silicobra"           "Hippopotas"         
+    ## [142] "Helioptile"          "Trapinch"            "Vibrava"            
+    ## [145] "Axew"                "Galarian Yamask"     "Unovan Yamask"      
+    ## [148] "Honedge"             "Sinistea"            "Phantump"           
+    ## [151] "Morelull"            "Snom"                "Clobbopus"          
+    ## [154] "Bergmite"            "Mime Jr."            "Galarian Darumaka"  
+    ## [157] "Ditto"               "Charmander"          "Larvitar"           
+    ## [160] "Deino"               "Goomy"               "Jangmo-o"           
+    ## [163] "Dreepy"
+
+``` r
+# Create vector of clusters
+cluster <- c(1: 4)
+# Extract centers
+center_df <- data.frame(cluster, centers_1)
+
+# Reshape the data
+center_reshape <- gather(center_df, # set the data 
+                         stats, # the col name for the select columns' name
+                         values, # the col name for the select columns' value
+                         hp:speed) # select columns 
+```
+
+    ## Coordinate system already present. Adding new coordinate system, which will replace the existing one.
+
+![](README_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+
+Overall, cluster 1 performs much more better than other three clusters.
+Pokemons of cluster 1 are generally faster compared to pokemons in other
+three clusters. Pokemons of cluster 2 are better at physical attack and
+has a higher health value. Pokemons of cluster 3 are good at dealing
+with special attack due to higher special defense. And cluster 4
+performs generally worse at all six stats.
+
+### Method 1 : Calculate Optimal Cluster Number (Elbow Method)
+
+Let’s try to calculate the optimal cluster number to see if we have a
+better set of clusters.  
+In general, while we increase the number of clusters, error will always
+decrease. The optimal cluster number is the one where rate of
+improvement in performance begins to decrease. And that is how we can
+find the optimal cluster number.
+
+``` r
+# Create function to try different cluster numbers
+kmean_withinss <- function(k) {
+  cluster <- kmeans( x = pokemon_new[,2:7],  # Set data to use
+                    centers = k,  # Set number of clusters as k, changes with input into function
+                    nstart = 25, # Set number of starts
+                    iter.max = 100) # Set max number of iterations
+  return (cluster$tot.withinss) # Return cluster error/within cluster sum of squares
+}
+
+# Set maximum cluster number
+max_k <- 20
+# Run algorithm over a range of cluster numbers
+wss <- sapply(2:max_k, kmean_withinss)
+
+# Create a data frame to plot the graph
+elbow <-data.frame(2:max_k, wss)
+
+# Plot the graph with gglop
+g_1 <- ggplot(elbow, aes(x = X2.max_k, y = wss)) +  
+  theme_set(theme_bw(base_size = 22) ) +
+  geom_point(color = "blue") +
+  geom_line() +
+  scale_x_continuous(breaks = seq(1, 20, by = 1)) +
+  labs(x = "Number of Clusters", y="Within Cluster \nSum of Squares") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+g_1
+```
+
+![](README_files/figure-gfm/Check%20Cluster%20Number-1.png)<!-- -->
+
+It seems that the optimal number of clusters is five. So, let’s try it
+out
+
+``` r
+set.seed(111111) # Set seed for reproducibility
+fit_2 <- kmeans(x = pokemon_new[,2:7], # Set data as explantory variables 
+                centers = 5,  # Set number of clusters
+                nstart = 25, # Set number of starts
+                iter.max = 100 ) # Set maximum number of iterations to use
+```
+
+``` r
+# Extract clusters
+clusters_2 <- fit_2$cluster
+
+# Extract centers
+centers_2 <- fit_2$centers
+
+# Check samples per cluster
+summary(as.factor(clusters_2))
+```
+
+    ##   1   2   3   4   5 
+    ##  39  71  67 159  66
+
+``` r
+# Check pokemons in cluster 1
+cat("Cluster 1 Pokemon:\n")
+```
+
+    ## Cluster 1 Pokemon:
+
+``` r
+pokemon_new$pokemon_name[clusters_2 == 1]
+```
+
+    ##  [1] "Charjabug"        "Claydol"          "Crustle"          "Hitmonchan"      
+    ##  [5] "Hitmontop"        "Klang"            "Vespiquen"        "Bronzong"        
+    ##  [9] "Dusclops"         "Dusknoir"         "Cloyster"         "Pyukumuku"       
+    ## [13] "Gigalith"         "Onix"             "Steelix"          "Ferrothorn"      
+    ## [17] "Gourgeist"        "Umbreon"          "Araquanid"        "Scrafty"         
+    ## [21] "Shuckle"          "Golisopod"        "Barbaracle"       "Galarian Corsola"
+    ## [25] "Galarian Weezing" "Sudowoodo"        "Escavalier"       "Torkoal"         
+    ## [29] "Toxapex"          "Sandaconda"       "Runerigus"        "Cofagrigus"      
+    ## [33] "Doublade"         "Aegislash"        "Turtonator"       "Pinchurchin"     
+    ## [37] "Avalugg"          "Eiscue"           "Kommo-o"
+
+``` r
+# Check pokemons in cluster 2
+cat("Cluster 2 Pokemon:\n")
+```
+
+    ## Cluster 2 Pokemon:
+
+``` r
+pokemon_new$pokemon_name[clusters_2 == 2]
+```
+
+    ##  [1] "Rillaboom"           "Corviknight"         "Greedent"           
+    ##  [4] "Drednaw"             "Tsareena"            "Piloswine"          
+    ##  [7] "Mamoswine"           "Mudbray"             "Mudsdale"           
+    ## [10] "Golurk"              "Bewear"              "Kingler"            
+    ## [13] "Quagsire"            "Crawdaunt"           "Pangoro"            
+    ## [16] "Drifblim"            "Skuntank"            "Seismitoad"         
+    ## [19] "Machoke"             "Machamp"             "Gyarados"           
+    ## [22] "Seaking"             "Garbodor"            "Centiskorch"        
+    ## [25] "Carkol"              "Coalossal"           "Excadrill"          
+    ## [28] "Boldore"             "Gurdurr"             "Conkeldurr"         
+    ## [31] "Perrserker"          "Appletun"            "Wobbuffet"          
+    ## [34] "Sirfetch’d"          "Lanturn"             "Galarian Stunfisk"  
+    ## [37] "Whiscash"            "Gastrodon"           "Grimmsnarl"         
+    ## [40] "Bisharp"             "Throh"               "Sawk"               
+    ## [43] "Munchlax"            "Snorlax"             "Rhyhorn"            
+    ## [46] "Rhydon"              "Rhyperior"           "Beartic"            
+    ## [49] "Braviary"            "Mandibuzz"           "Malamar"            
+    ## [52] "Copperajah"          "Hippowdon"           "Fraxure"            
+    ## [55] "Trevenant"           "Passimian"           "Grapploct"          
+    ## [58] "Wailmer"             "Wailord"             "Dhelmise"           
+    ## [61] "Lapras"              "Solrock"             "Galarian Darmanitan"
+    ## [64] "Stonejourner"        "Dracozolt"           "Arctozolt"          
+    ## [67] "Dracovish"           "Arctovish"           "Pupitar"            
+    ## [70] "Tyranitar"           "Zweilous"
+
+``` r
+# Check pokemons in cluster 3
+cat("Cluster 3 Pokemon:\n")
+```
+
+    ## Cluster 3 Pokemon:
+
+``` r
+pokemon_new$pokemon_name[clusters_2 == 3]
+```
+
+    ##  [1] "Thwackey"          "Raboot"            "Cinderace"        
+    ##  [4] "Drizzile"          "Inteleon"          "Unfezant"         
+    ##  [7] "Galarian Linoone"  "Obstagoon"         "Dubwool"          
+    ## [10] "Shiftry"           "Liepard"           "Boltund"          
+    ## [13] "Diggersby"         "Cinccino"          "Galvantula"       
+    ## [16] "Manectric"         "Ninetales"         "Arcanine"         
+    ## [19] "Glalie"            "Froslass"          "Xatu"             
+    ## [22] "Ninjask"           "Hitmonlee"         "Klinklang"        
+    ## [25] "Gallade"           "Basculin"          "Dugtrio"          
+    ## [28] "Swoobat"           "Noivern"           "Barraskewda"      
+    ## [31] "Persian"           "Ribombee"          "Raichu"           
+    ## [34] "Jolteon"           "Leafeon"           "Flapple"          
+    ## [37] "Meowstic"          "Toxicroak"         "Salazzle"         
+    ## [40] "Whimsicott"        "Accelgor"          "Drapion"          
+    ## [43] "Sneasel"           "Weavile"           "Lucario"          
+    ## [46] "Mimikyu"           "Qwilfish"          "Cramorant"        
+    ## [49] "Durant"            "Hawlucha"          "Flygon"           
+    ## [52] "Haxorus"           "Galarian Ponyta"   "Galarian Rapidash"
+    ## [55] "Morepeko"          "Falinks"           "Togedemaru"       
+    ## [58] "Galarian Mr. Mime" "Duraludon"         "Charmeleon"       
+    ## [61] "Charizard"         "Silvally"          "Hakamo-o"         
+    ## [64] "Drakloak"          "Dragapult"         "Zacian"           
+    ## [67] "Zamazenta"
+
+``` r
+# Check pokemons in cluster 4
+cat("Cluster 4 Pokemon:\n")
+```
+
+    ## Cluster 4 Pokemon:
+
+``` r
+pokemon_new$pokemon_name[clusters_2 == 4]
+```
+
+    ##   [1] "Grookey"             "Scorbunny"           "Sobble"             
+    ##   [4] "Blipbug"             "Dottler"             "Caterpie"           
+    ##   [7] "Metapod"             "Grubbin"             "Hoothoot"           
+    ##  [10] "Rookidee"            "Corvisquire"         "Skwovet"            
+    ##  [13] "Pidove"              "Tranquill"           "Nickit"             
+    ##  [16] "Galarian Zigzagoon"  "Wooloo"              "Lotad"              
+    ##  [19] "Lombre"              "Seedot"              "Nuzleaf"            
+    ##  [22] "Chewtle"             "Purrloin"            "Yamper"             
+    ##  [25] "Bunnelby"            "Minccino"            "Bounsweet"          
+    ##  [28] "Steenee"             "Oddish"              "Budew"              
+    ##  [31] "Wingull"             "Joltik"              "Electrike"          
+    ##  [34] "Vulpix"              "Growlithe"           "Vanillite"          
+    ##  [37] "Swinub"              "Delibird"            "Snorunt"            
+    ##  [40] "Baltoy"              "Dwebble"             "Golett"             
+    ##  [43] "Munna"               "Natu"                "Stufful"            
+    ##  [46] "Snover"              "Krabby"              "Wooper"             
+    ##  [49] "Corphish"            "Nincada"             "Shedinja"           
+    ##  [52] "Tyrogue"             "Pancham"             "Klink"              
+    ##  [55] "Combee"              "Bronzor"             "Ralts"              
+    ##  [58] "Kirlia"              "Drifloon"            "Gossifleur"         
+    ##  [61] "Cherubi"             "Stunky"              "Tympole"            
+    ##  [64] "Palpitoad"           "Duskull"             "Machop"             
+    ##  [67] "Gastly"              "Magikarp"            "Goldeen"            
+    ##  [70] "Remoraid"            "Shellder"            "Feebas"             
+    ##  [73] "Wishiwashi"          "Trubbish"            "Sizzlipede"         
+    ##  [76] "Rolycoly"            "Diglett"             "Drilbur"            
+    ##  [79] "Roggenrola"          "Timburr"             "Woobat"             
+    ##  [82] "Noibat"              "Arrokuda"            "Galarian Meowth"    
+    ##  [85] "Meowth"              "Milcery"             "Cutiefly"           
+    ##  [88] "Ferroseed"           "Pumpkaboo"           "Pichu"              
+    ##  [91] "Pikachu"             "Eevee"               "Applin"             
+    ##  [94] "Espurr"              "Swirlix"             "Spritzee"           
+    ##  [97] "Dewpider"            "Wynaut"              "Galarian Farfetch’d"
+    ## [100] "Chinchou"            "Croagunk"            "Scraggy"            
+    ## [103] "Barboach"            "Shellos"             "Wimpod"             
+    ## [106] "Binacle"             "Impidimp"            "Morgrem"            
+    ## [109] "Hatenna"             "Salandit"            "Pawniard"           
+    ## [112] "Koffing"             "Bonsly"              "Cleffa"             
+    ## [115] "Clefairy"            "Togepi"              "Cottonee"           
+    ## [118] "Gothita"             "Solosis"             "Karrablast"         
+    ## [121] "Shelmet"             "Elgyem"              "Cubchoo"            
+    ## [124] "Rufflet"             "Vullaby"             "Skorupi"            
+    ## [127] "Litwick"             "Inkay"               "Sableye"            
+    ## [130] "Mawile"              "Riolu"               "Cufant"             
+    ## [133] "Frillish"            "Mareanie"            "Toxel"              
+    ## [136] "Silicobra"           "Hippopotas"          "Helioptile"         
+    ## [139] "Trapinch"            "Vibrava"             "Axew"               
+    ## [142] "Galarian Yamask"     "Unovan Yamask"       "Honedge"            
+    ## [145] "Sinistea"            "Phantump"            "Morelull"           
+    ## [148] "Snom"                "Clobbopus"           "Bergmite"           
+    ## [151] "Mime Jr."            "Galarian Darumaka"   "Ditto"              
+    ## [154] "Charmander"          "Larvitar"            "Deino"              
+    ## [157] "Goomy"               "Jangmo-o"            "Dreepy"
+
+``` r
+# Check pokemons in cluster 4
+cat("Cluster 5 Pokemon:\n")
+```
+
+    ## Cluster 5 Pokemon:
+
+``` r
+pokemon_new$pokemon_name[clusters_2 == 5]
+```
+
+    ##  [1] "Orbeetle"    "Butterfree"  "Vikavolt"    "Noctowl"     "Thievul"    
+    ##  [6] "Ludicolo"    "Gloom"       "Vileplume"   "Bellossom"   "Roselia"    
+    ## [11] "Roserade"    "Pelipper"    "Vanillish"   "Vanilluxe"   "Musharna"   
+    ## [16] "Abomasnow"   "Gardevoir"   "Eldegoss"    "Cherrim"     "Haunter"    
+    ## [21] "Gengar"      "Octillery"   "Milotic"     "Alcremie"    "Vaporeon"   
+    ## [26] "Flareon"     "Espeon"      "Glaceon"     "Sylveon"     "Slurpuff"   
+    ## [31] "Aromatisse"  "Cursola"     "Hattrem"     "Hatterene"   "Clefable"   
+    ## [36] "Togetic"     "Togekiss"    "Gothorita"   "Gothitelle"  "Duosion"    
+    ## [41] "Reuniclus"   "Beheeyem"    "Lampent"     "Chandelure"  "Maractus"   
+    ## [46] "Sigilyph"    "Jellicent"   "Toxtricity"  "Heatmor"     "Heliolisk"  
+    ## [51] "Polteageist" "Indeedee"    "Shiinotic"   "Oranguru"    "Drampa"     
+    ## [56] "Frosmoth"    "Mantyke"     "Mantine"     "Lunatone"    "Mr. Rime"   
+    ## [61] "Rotom"       "Type: Null"  "Hydreigon"   "Sliggoo"     "Goodra"     
+    ## [66] "Eternatus"
+
+Lets check the quality of our clustering solution using a silhouette
+plot:
+
+``` r
+dis = dist(pokemon_new[2:7])^2
+sil = silhouette (fit_1$cluster , dis, full = TRUE)
+plot(sil)
+```
+
+![](README_files/figure-gfm/Quality%20Check-1.png)<!-- -->
+
+``` r
+sil = silhouette (fit_2$cluster , dis, full = TRUE)
+plot(sil)
+```
+
+![](README_files/figure-gfm/Quality%20Check-2.png)<!-- -->
+
+``` r
+# silhouette coefficients (as these values are referred to as) near +1 indicate that the sample is far away from the neighboring clusters. A value of 0 indicates that the sample is on or very close to the decision boundary between two neighboring clusters and negative values indicate that those samples might have been assigned to the wrong cluster.
+```
+
+From four clusters’ silhouette plot, we can see both cluster 2 and 3
+have samples that do not belong to their groups, while it is even worse
+in five clusters’ silhouette plot, Clusters 1, 2 and 5 have samples that
+do not belong to their groups.
+
+### Checking Clustering Quality
+
+We use cluster cardinality to see number of samples in each cluster
+
+``` r
+plot_clust_cardinality <- cbind.data.frame(clusters_1, clusters_2) # Join clusters with  k =4 and k=6
+names(plot_clust_cardinality) <- c("k_4", "k_5") # Set names
+# Create bar plots
+g_2 <- ggplot(plot_clust_cardinality, aes( x = factor(k_4))) + # Set x as cluster values
+  geom_bar(stat = "count", fill = "steelblue") + # Use geom_bar with stat = "count" to count observations
+    labs(x = "Cluster Number", y="Points in Cluster", # Set labels
+         title = "Cluster Cardinality (k = 4)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+
+g_3 <- ggplot(plot_clust_cardinality, aes( x = factor(k_5))) + # Set x as cluster values
+  geom_bar(stat = "count", fill = "steelblue") + # Use geom_bar with stat = "count" to count observations
+    labs(x = "Cluster Number", y="Points in Cluster", # Set labels
+         title = "Cluster Cardinality (k = 5)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+g_2
+```
+
+![](README_files/figure-gfm/Clustering%20Cardinality-1.png)<!-- -->
+
+``` r
+g_3
+```
+
+![](README_files/figure-gfm/Clustering%20Cardinality-2.png)<!-- --> When
+k =4, only cluster 4 has significant amount of samples compared to other
+three clusters, which worths asking questions to analyze further.
+However, 5 clusters (k=5) did not help to solve this issue either.
+
+Next we will check on cluster magnitude by visualizing the within
+cluster sum of squares for each cluster to see how good a fit each of
+the clusters was fit.
+
+``` r
+k_4_mag <- cbind.data.frame(c(1:4), fit_1$withinss) # Extract within cluster sum of squares
+names(k_4_mag) <- c("cluster", "withinss") # Fix names for plot data
+g_4 <- ggplot(k_4_mag, aes(x = cluster, y = withinss)) + # Set x as cluster, y as withinss
+  geom_bar(stat = "identity", fill = "steelblue") + # Use geom bar and stat = "identity" to plot values directly
+   labs(x = "Cluster Number", y="Total Point to Centroid Distance", # Set labels
+         title = "Cluster Magnitude (k = 4)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+  
+k_5_mag <- cbind.data.frame(c(1:5), fit_2$withinss) # Extract within cluster sum of squares
+names(k_5_mag) <- c("cluster", "withinss") # Fix names for plot data
+g_5 <- ggplot(k_5_mag, aes(x = cluster, y = withinss)) +  # Set x as cluster, y as withinss
+  geom_bar(stat = "identity", fill = "steelblue") + # Use geom bar and stat = "identity" to plot values directly
+   labs(x = "Cluster Number", y="Total Point to Centroid Distance", # Set labels
+         title = "Cluster Magnitude (k = 5)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+
+g_4
+```
+
+![](README_files/figure-gfm/Check%20Cluster%20Magnitude-1.png)<!-- -->
+
+``` r
+g_5
+```
+
+![](README_files/figure-gfm/Check%20Cluster%20Magnitude-2.png)<!-- -->
+
+When we have 4 clusters (k=4), both cluster 3 and 4 have similarities on
+the cluster sum of squares. Cluster 1 has the smallest value among all,
+while cluster 3 value is a little higher than cluster 1.
+
+When we have 5 clusters (k=5), cluster 4 has the highest value among
+all, while both cluster 1 and 5 have similarities on the cluster sum of
+squares. However, cluster 3 has the lowest value.
+
+And we also see with the number of cluster increasing, the cluster sum
+of squares actually decreases, which is the expected results we want to
+see.
+
+We can also plot both magnitude and cardinality on the graphs to see the
+relationship
+
+``` r
+k_4_dat <- cbind.data.frame(table(clusters_1), k_4_mag[,2]) # Join magnitude and cardinality
+names(k_4_dat) <- c("cluster", "cardinality", "magnitude") # Fix plot data names
+
+g_6 <- ggplot(k_4_dat, aes(x = cardinality, y = magnitude, color = cluster)) + # Set aesthetics
+  geom_point(alpha = 0.8, size  = 4) +  # Set geom point for scatter
+ geom_smooth(aes(x = cardinality, y = magnitude), method = "lm",
+              se = FALSE, inherit.aes = FALSE, alpha = 0.5) + # Set trend  line
+  labs(x = "Cluster Cardinality", y="Total Point to Centroid Distance", # Set labels
+         title = "Cluster Magnitude vs Cardinality \n(k = 4)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+
+k_5_dat <- cbind.data.frame(table(clusters_2), k_5_mag[,2]) # Join magnitude and cardinality
+names(k_5_dat) <- c("cluster", "cardinality", "magnitude") # Fix plot data names
+
+g_7 <- ggplot(k_5_dat, aes(x = cardinality, y = magnitude, color = cluster)) + # Set aesthetics
+  geom_point(alpha = 0.8, size = 4) +  # Set geom point for scatter
+  geom_smooth(aes(x = cardinality, y = magnitude), method = "lm",
+              se = FALSE, inherit.aes = FALSE, alpha = 0.5) + # Set trend  line
+  labs(x = "Cluster Cardinality", y="Total Point to Centroid Distance", # Set labels
+         title = "Cluster Magnitude vs Cardinality \n(k = 5)") +
+  theme(panel.grid.major = element_blank(), # Turn of the background grid
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) 
+
+
+g_6
+```
+
+    ## `geom_smooth()` using formula 'y ~ x'
+
+![](README_files/figure-gfm/Magnitude%20v%20Cardinality-1.png)<!-- -->
+
+``` r
+g_7
+```
+
+    ## `geom_smooth()` using formula 'y ~ x'
+
+![](README_files/figure-gfm/Magnitude%20v%20Cardinality-2.png)<!-- -->
+
+It seems that five cluster actually shows us a better positive
+relationship between magnitude and cardinality compared to four cluster.
+And since cluster 3(k=5) is far away from the fitted line, *cluster 3*
+might be anomalous clusters among all.
+
+Let’s look at the heat map for all six stats on five clusters
+
+``` r
+# Create vector of clusters
+cluster2 <- c(1: 5)
+# Extract centers
+center_df_2 <- data.frame(cluster2, centers_2)
+
+# Reshape the data
+
+center_reshape_2 <- gather(center_df_2, # set the data 
+                         stats, # the col name for the select columns' name
+                         values, # the col name for the select columns' value
+                         hp:speed) # select columns 
+
+g_heat_2 <- ggplot(data = center_reshape_2, aes(x = stats, y = cluster2, fill = values)) +
+  scale_y_continuous(breaks = seq(1, 5, by = 1)) +
+  geom_tile() +
+  coord_equal() + 
+  theme_set(theme_bw(base_size = 22) ) +
+  scale_fill_gradient2(low = "blue", # Choose low color
+                       mid = "white", # Choose mid color
+                       high = "red", # Choose high color
+                       midpoint =0, # Choose mid point
+                       space = "Lab", 
+                       na.value ="grey", # Choose NA value
+                       guide = "colourbar", # Set color bar
+                       aesthetics = "fill") + # Select aesthetics to apply
+  coord_flip()
+```
+
+    ## Coordinate system already present. Adding new coordinate system, which will replace the existing one.
+
+``` r
+g_heat_2
+```
+
+![](README_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+
+It seems that cluster 3 is generally better than any other clusters and
+cluster 4 performs the lowest in terms of all the stats values. We can
+also subset our original pokemon by each cluster number and create five
+cluster subset.
+
+``` r
+group_1 <- pokemon_list[clusters_2==1,]  # subset cluster 1 
+group_2 <- pokemon_list[clusters_2==2,]  # subset cluster 2 
+group_3 <- pokemon_list[clusters_2==3,]  # subset cluster 3
+group_4 <- pokemon_list[clusters_2==4,]  # subset cluster 4
+group_5 <- pokemon_list[clusters_2==5,]  # subset cluster 5
+```
+
+``` r
+make_ridge_plot <- function(data){
+  
+  data <- data %>%
+      pivot_longer(cols=hp:speed,   # transform into long table
+                   names_to="stats_type",
+                   values_to="score")
+  
+  ggplot(data,aes(x=score, y=stats_type,fill=stats_type)) +
+    geom_boxplot() +
+    scale_fill_viridis(discrete = TRUE, alpha=0.8, option="A") +
+    geom_jitter(color="black", size=0.4, alpha=0.) +
+    theme_ipsum() +
+    theme(
+      legend.position="none",
+      plot.title = element_text(size=12)
+    ) +
+    ggtitle("All Pokemon in Galar Region Stats Boxplot") +
+    xlab("Stats Score")+
+    ylab("")
+}
+
+rp3 <- make_ridge_plot(group_3)
+rp4 <- make_ridge_plot(group_4)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+
+### Method 2 : Calculate Optimal Cluster Number (Gap Statistic Method)
+
+``` r
+library(cluster)
+# compute gap statistic
+set.seed(111111)
+gap_stat <- clusGap(pokemon_new[,2:7], FUN = kmeans, nstart = 25,
+                    K.max = 10, B = 50)
+```
+
+    ## Warning: did not converge in 10 iterations
+
+``` r
+# Print the result
+print(gap_stat, method = "firstmax")
+```
+
+    ## Clustering Gap statistic ["clusGap"] from call:
+    ## clusGap(x = pokemon_new[, 2:7], FUNcluster = kmeans, K.max = 10,     B = 50, nstart = 25)
+    ## B=50 simulated reference sets, k = 1..10; spaceH0="scaledPCA"
+    ##  --> Number of clusters (method 'firstmax'): 3
+    ##           logW   E.logW       gap      SE.sim
+    ##  [1,] 5.781381 6.528557 0.7471754 0.009577584
+    ##  [2,] 5.573405 6.406582 0.8331773 0.009460840
+    ##  [3,] 5.491764 6.334510 0.8427455 0.008866743
+    ##  [4,] 5.437276 6.275915 0.8386394 0.009394681
+    ##  [5,] 5.393298 6.227843 0.8345446 0.009676548
+    ##  [6,] 5.351692 6.185554 0.8338619 0.009733046
+    ##  [7,] 5.319019 6.147791 0.8287715 0.009672889
+    ##  [8,] 5.296232 6.114497 0.8182653 0.010054975
+    ##  [9,] 5.262427 6.085694 0.8232675 0.010024066
+    ## [10,] 5.245706 6.059067 0.8133607 0.009660834
+
+``` r
+fviz_gap_stat(gap_stat)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+
+If we use gap statistic method, the optimal cluster will be three only.
+We will not spend more time on this method at this time.
