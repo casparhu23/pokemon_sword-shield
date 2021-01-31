@@ -644,7 +644,15 @@ pokemon_list %>%
   corrplot(method = "number")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- --> \#\# Shiny
+interactive Web
+
+If you think want to twist some variables or do some additional analysis
+on this pokemon data set. I have developed a interactive web application
+through Shiny, please click the link and check it out and take as much
+time as you need\!
+
+Shiny App Link: <https://caspar-hu23.shinyapps.io/Pokemon_App/>
 
 ## K-means cluster
 
