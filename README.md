@@ -646,7 +646,7 @@ pokemon_list %>%
 
 ![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
-## Shiny interactive Web
+## Shiny interactive web-app
 
 If you want to twist some variables or do some additional
 exploratory analysis on this pokemon data set. I have developed an
