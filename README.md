@@ -648,7 +648,7 @@ pokemon_list %>%
 
 ## Shiny interactive Web
 
-If you think want to twist some variables or do some additional
+If you want to twist some variables or do some additional
 exploratory analysis on this pokemon data set. I have developed a
 interactive web application through Shiny, please click the link and
 check it out and take as much time as you need\!
