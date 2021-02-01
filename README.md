@@ -649,7 +649,7 @@ pokemon_list %>%
 ## Shiny interactive Web
 
 If you want to twist some variables or do some additional
-exploratory analysis on this pokemon data set. I have developed a
+exploratory analysis on this pokemon data set. I have developed an
 interactive web application through Shiny, please click the link and
 check it out and take as much time as you need\!
 
