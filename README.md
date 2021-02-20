@@ -27,7 +27,7 @@ library(stringr)
 library(ggplot2)
 ```
 
-This is a project combined with web scraping and data cleaning. The data
+This is a project combined with web scraping, data cleaning and K-means clustering. The data
 sets are from two different website. One is called `serebii.net`that
 collects Pokemon stats and info and the other website is named `IGN`, a
 famous games review website.
