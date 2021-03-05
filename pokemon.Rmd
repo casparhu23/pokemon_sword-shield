@@ -754,3 +754,67 @@ par(mar = rep(0,4))
 circlize_dendrogram(dend)
 ```
 
+## Factor Analysis
+
+```{r}
+# prepare dataset for factor analysis
+library(psych)
+pokemon_factor_id <- pokemon_list[,c(1,2,7:12)] # extract six stats with id and name
+pokemon_factor <- pokemon_list[,7:12] # extract only six stats for factor analysis
+```
+
+
+```{r}
+# Determine Number of Factors to Extract
+library(nFactors)
+ev <- eigen(cor(pokemon_factor)) # get eigenvalues
+ap <- parallel(subject=nrow(pokemon_factor),var=ncol(pokemon_factor),
+  rep=100,cent=.05)
+nS <- nScree(x=ev$values, aparallel=ap$eigen$qevpea)
+plotnScree(nS) 
+```
+Since two methods suggest choosing three factors and the other two suggest choosing only one factor. Let's try number of factors from 3 to 1, and see how they perform. 
+
+```{r}
+fa(pokemon_factor, 3) # three factors
+fa(pokemon_factor, 2) # two factors
+fa(pokemon_factor, 1) # one factor
+model <- fa(pokemon_factor, 1)
+```
+It seems that one factor MR1 is sufficient enough to capture correlation coefficient for six variables.
+
+```{r}
+pokemon_scores <- cbind(model$scores,pokemon_factor_id)
+
+colnames(pokemon_scores)
+pokemon_scores$total <- rowSums(pokemon_scores[,4:9], na.rm=TRUE)
+
+pokemon_scores <- pokemon_scores[order(-pokemon_scores$total),] 
+```
+
+# ```{r}
+# # Maximum Likelihood Factor Analysis
+# # entering raw data and extracting 3 factors,
+# # with varimax rotation
+# fit <- factanal(pokemon_factor, 3, rotation="varimax")
+# print(fit, digits=2, cutoff=.3, sort=TRUE)
+# # plot factor 1 by factor 2
+# load <- fit$loadings[,1:2]
+# plot(load,type="n") # set up plot
+# text(load,labels=names(pokemon_factor),cex=.7) # add variable names 
+# ```
+
+We can see that the attack variable loads heavily close to 1 on Factor 1 but has low loading on Factor 2. We see that the defense variable loads heavily around 0.8 on Factor 2  but not on Factor 1. Thus, we can define the factors using those terms. Factor 1 might be labeled attack, and Factor 2 might be labeled defense.
+
+# ```{r}
+# # Pricipal Components Analysis
+# # entering raw data and extracting PCs
+# # from the correlation matrix
+# fit <- princomp(pokemon_factor, cor=TRUE)
+# summary(fit) # print variance accounted for
+# loadings(fit) # pc loadings
+# plot(fit,type="lines") # scree plot
+# fit$scores # the principal components
+# biplot(fit) 
+# ```
+

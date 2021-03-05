@@ -651,3 +651,81 @@ fviz_gap_stat(gap_stat)
 ```
 
 If we use gap statistic method, the optimal cluster will be three only. We will not spend more time on this method at this time. 
+
+## Factor Analysis
+
+```{r}
+# prepare dataset for factor analysis
+library(psych)
+pokemon_factor_id <- pokemon_list[,c(1:4,7:12)] # extract six stats with id and name
+pokemon_factor <- pokemon_list[,7:12] # extract only six stats for factor analysis
+```
+
+```{r}
+# Determine Number of Factors to Extract
+library(nFactors)
+ev <- eigen(cor(pokemon_factor)) # get eigenvalues
+ap <- parallel(subject=nrow(pokemon_factor),var=ncol(pokemon_factor),
+  rep=100,cent=.05)
+nS <- nScree(x=ev$values, aparallel=ap$eigen$qevpea)
+plotnScree(nS) 
+```
+
+Since two methods suggest choosing three factors and the other two suggest choosing only one factor. Let's try number of factors from 3 to 1, and see how they perform. 
+
+```{r}
+fa(pokemon_factor, 3) # three factors
+fa(pokemon_factor, 2) # two factors
+fa(pokemon_factor, 1) # one factor
+model <- fa(pokemon_factor, 1)
+```
+It seems that one factor MR1 is sufficient enough to capture correlation coefficient for six variables.
+
+```{r}
+pokemon_scores <- cbind(model$scores,pokemon_factor_id) # put scores back into 
+
+names(pokemon_scores)[1] <- "performance_score" # rename the column
+pokemon_scores$total <- rowSums(pokemon_scores[,6:11], na.rm=TRUE) 
+
+pokemon_scores <- pokemon_scores[order(-pokemon_scores$performance_score),] # sort by performance score
+```
+
+
+```{r}
+head(pokemon_scores,10)
+```
+
+```{r, echo=FALSE}
+library(forcats)
+pokemon_scores[1:10,]%>%
+  mutate(pokemon_name = fct_reorder(pokemon_name, desc(-performance_score))) %>%
+  ggplot(aes(x=pokemon_name, y=performance_score, fill=type_1)) + 
+  geom_bar(stat = "identity")+
+  coord_flip()+
+  theme_minimal()+
+  xlab("")+
+  ylab("Performance Score")+
+  labs(fill = "Primary Type")+
+  ggtitle("Top 10 Highest Performance Pokemon \n         calculated by Factor scores")
+  
+```
+We can see the top 10 highest performance Pokemon from the factor scores that we calculated from the last step. Eternatus is no doubt the best Pokemon overall, even in Poison type as well. Among 10 Pokemons, only Dragon type Pokemon appears twice. Goodra and Kommo-o seem to be the best Dragon Pokemon in this game. 
+
+```{r}
+tail(pokemon_scores,10)
+```
+
+```{r, echo=FALSE}
+pokemon_scores[392:402,]%>%
+  mutate(pokemon_name = fct_reorder(pokemon_name, desc(performance_score))) %>%
+  ggplot(aes(x=pokemon_name, y=performance_score, fill=type_1)) + 
+  geom_bar(stat = "identity")+
+  coord_flip()+
+  theme_minimal()+
+  xlab("")+
+  ylab("Performance Score")+
+  labs(fill = "Primary Type")+
+  ggtitle("Bottom 10 Lowest Performance Pokemon \n         calculated by Factor scores")
+```
+We are not surprised to find out some lowest performance Pokemon are the ones that have not evolved yet. 
+Magikarp is absolutely the worst Pokemon.

@@ -1462,3 +1462,274 @@ fviz_gap_stat(gap_stat)
 
 If we use gap statistic method, the optimal cluster will be three only.
 We will not spend more time on this method at this time.
+
+## Factor Analysis
+
+``` r
+# prepare dataset for factor analysis
+library(psych)
+```
+
+    ## 
+    ## Attaching package: 'psych'
+
+    ## The following objects are masked from 'package:ggplot2':
+    ## 
+    ##     %+%, alpha
+
+``` r
+pokemon_factor_id <- pokemon_list[,c(1:4,7:12)] # extract six stats with id and name
+pokemon_factor <- pokemon_list[,7:12] # extract only six stats for factor analysis
+```
+
+``` r
+# Determine Number of Factors to Extract
+library(nFactors)
+```
+
+    ## Loading required package: lattice
+
+    ## 
+    ## Attaching package: 'nFactors'
+
+    ## The following object is masked from 'package:lattice':
+    ## 
+    ##     parallel
+
+``` r
+ev <- eigen(cor(pokemon_factor)) # get eigenvalues
+ap <- parallel(subject=nrow(pokemon_factor),var=ncol(pokemon_factor),
+  rep=100,cent=.05)
+nS <- nScree(x=ev$values, aparallel=ap$eigen$qevpea)
+plotnScree(nS) 
+```
+
+![](README_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+
+Since two methods suggest choosing three factors and the other two
+suggest choosing only one factor. Let’s try number of factors from 3 to
+1, and see how they perform.
+
+``` r
+fa(pokemon_factor, 3) # three factors
+```
+
+    ## Loading required namespace: GPArotation
+
+    ## Warning in fac(r = r, nfactors = nfactors, n.obs = n.obs, rotate = rotate, : I
+    ## am sorry, to do these rotations requires the GPArotation package to be installed
+
+    ## Warning in fac(r = r, nfactors = nfactors, n.obs = n.obs, rotate = rotate, : An
+    ## ultra-Heywood case was detected. Examine the results carefully
+
+    ## Factor Analysis using method =  minres
+    ## Call: fa(r = pokemon_factor, nfactors = 3)
+    ## Standardized loadings (pattern matrix) based upon correlation matrix
+    ##             MR1   MR2   MR3   h2     u2 com
+    ## hp         0.55  0.01  0.13 0.32  0.682 1.1
+    ## attack     0.78 -0.41  0.49 1.01 -0.012 2.3
+    ## defence    0.63 -0.42 -0.46 0.79  0.206 2.7
+    ## sp_attack  0.61  0.71 -0.03 0.88  0.124 2.0
+    ## sp_defence 0.58  0.14 -0.37 0.50  0.503 1.8
+    ## speed      0.25  0.26  0.30 0.22  0.783 2.9
+    ## 
+    ##                        MR1  MR2  MR3
+    ## SS loadings           2.07 0.94 0.71
+    ## Proportion Var        0.34 0.16 0.12
+    ## Cumulative Var        0.34 0.50 0.62
+    ## Proportion Explained  0.56 0.25 0.19
+    ## Cumulative Proportion 0.56 0.81 1.00
+    ## 
+    ## Mean item complexity =  2.1
+    ## Test of the hypothesis that 3 factors are sufficient.
+    ## 
+    ## The degrees of freedom for the null model are  15  and the objective function was  1.43 with Chi Square of  569.56
+    ## The degrees of freedom for the model are 0  and the objective function was  0.03 
+    ## 
+    ## The root mean square of the residuals (RMSR) is  0.02 
+    ## The df corrected root mean square of the residuals is  NA 
+    ## 
+    ## The harmonic number of observations is  402 with the empirical chi square  5.01  with prob <  NA 
+    ## The total number of observations was  402  with Likelihood Chi Square =  12.15  with prob <  NA 
+    ## 
+    ## Tucker Lewis Index of factoring reliability =  -Inf
+    ## Fit based upon off diagonal values = 1
+    ## Measures of factor score adequacy             
+    ##                                                    MR1  MR2  MR3
+    ## Correlation of (regression) scores with factors   0.97 0.94 0.93
+    ## Multiple R square of scores with factors          0.95 0.88 0.86
+    ## Minimum correlation of possible factor scores     0.89 0.76 0.72
+
+``` r
+fa(pokemon_factor, 2) # two factors
+```
+
+    ## Loading required namespace: GPArotation
+
+    ## Warning in fac(r = r, nfactors = nfactors, n.obs = n.obs, rotate = rotate, : I
+    ## am sorry, to do these rotations requires the GPArotation package to be installed
+    
+    ## Warning in fac(r = r, nfactors = nfactors, n.obs = n.obs, rotate = rotate, : An
+    ## ultra-Heywood case was detected. Examine the results carefully
+
+    ## Factor Analysis using method =  minres
+    ## Call: fa(r = pokemon_factor, nfactors = 2)
+    ## Standardized loadings (pattern matrix) based upon correlation matrix
+    ##             MR1   MR2   h2      u2 com
+    ## hp         0.55  0.20 0.35  0.6519 1.3
+    ## attack     0.56  0.04 0.32  0.6822 1.0
+    ## defence    0.79 -0.62 1.01 -0.0077 1.9
+    ## sp_attack  0.50  0.48 0.48  0.5208 2.0
+    ## sp_defence 0.58  0.04 0.34  0.6593 1.0
+    ## speed      0.21  0.42 0.22  0.7776 1.5
+    ## 
+    ##                        MR1  MR2
+    ## SS loadings           1.88 0.83
+    ## Proportion Var        0.31 0.14
+    ## Cumulative Var        0.31 0.45
+    ## Proportion Explained  0.69 0.31
+    ## Cumulative Proportion 0.69 1.00
+    ## 
+    ## Mean item complexity =  1.4
+    ## Test of the hypothesis that 2 factors are sufficient.
+    ## 
+    ## The degrees of freedom for the null model are  15  and the objective function was  1.43 with Chi Square of  569.56
+    ## The degrees of freedom for the model are 4  and the objective function was  0.36 
+    ## 
+    ## The root mean square of the residuals (RMSR) is  0.09 
+    ## The df corrected root mean square of the residuals is  0.18 
+    ## 
+    ## The harmonic number of observations is  402 with the empirical chi square  102.28  with prob <  3.2e-21 
+    ## The total number of observations was  402  with Likelihood Chi Square =  141.85  with prob <  1.1e-29 
+    ## 
+    ## Tucker Lewis Index of factoring reliability =  0.065
+    ## RMSEA index =  0.293  and the 90 % confidence intervals are  0.253 0.335
+    ## BIC =  117.87
+    ## Fit based upon off diagonal values = 0.91
+    ## Measures of factor score adequacy             
+    ##                                                    MR1  MR2
+    ## Correlation of (regression) scores with factors   0.94 0.90
+    ## Multiple R square of scores with factors          0.88 0.81
+    ## Minimum correlation of possible factor scores     0.77 0.62
+
+``` r
+fa(pokemon_factor, 1) # one factor
+```
+
+    ## Factor Analysis using method =  minres
+    ## Call: fa(r = pokemon_factor, nfactors = 1)
+    ## Standardized loadings (pattern matrix) based upon correlation matrix
+    ##             MR1    h2   u2 com
+    ## hp         0.62 0.389 0.61   1
+    ## attack     0.61 0.370 0.63   1
+    ## defence    0.52 0.275 0.72   1
+    ## sp_attack  0.50 0.245 0.75   1
+    ## sp_defence 0.60 0.356 0.64   1
+    ## speed      0.24 0.059 0.94   1
+    ## 
+    ##                 MR1
+    ## SS loadings    1.69
+    ## Proportion Var 0.28
+    ## 
+    ## Mean item complexity =  1
+    ## Test of the hypothesis that 1 factor is sufficient.
+    ## 
+    ## The degrees of freedom for the null model are  15  and the objective function was  1.43 with Chi Square of  569.56
+    ## The degrees of freedom for the model are 9  and the objective function was  0.64 
+    ## 
+    ## The root mean square of the residuals (RMSR) is  0.14 
+    ## The df corrected root mean square of the residuals is  0.18 
+    ## 
+    ## The harmonic number of observations is  402 with the empirical chi square  228.57  with prob <  3.3e-44 
+    ## The total number of observations was  402  with Likelihood Chi Square =  253.61  with prob <  1.7e-49 
+    ## 
+    ## Tucker Lewis Index of factoring reliability =  0.264
+    ## RMSEA index =  0.26  and the 90 % confidence intervals are  0.233 0.288
+    ## BIC =  199.64
+    ## Fit based upon off diagonal values = 0.8
+    ## Measures of factor score adequacy             
+    ##                                                    MR1
+    ## Correlation of (regression) scores with factors   0.85
+    ## Multiple R square of scores with factors          0.72
+    ## Minimum correlation of possible factor scores     0.44
+
+``` r
+model <- fa(pokemon_factor, 1)
+```
+
+It seems that one factor MR1 is sufficient enough to capture correlation
+coefficient for six variables.
+
+``` r
+pokemon_scores <- cbind(model$scores,pokemon_factor_id) # put scores back into 
+
+names(pokemon_scores)[1] <- "performance_score" # rename the column
+pokemon_scores$total <- rowSums(pokemon_scores[,6:11], na.rm=TRUE) 
+
+pokemon_scores <- pokemon_scores[order(-pokemon_scores$performance_score),] # sort by performance score
+```
+
+``` r
+head(pokemon_scores,10)
+```
+
+    ##     performance_score No. pokemon_name   type_1   type_2  hp attack defence
+    ## 402          2.041289 400    Eternatus   Poison   Dragon 140     85      95
+    ## 400          1.866493 398       Zacian    Fairy     None  92    130     115
+    ## 401          1.866493 399    Zamazenta Fighting     None  92    130     115
+    ## 262          1.727352 261      Snorlax   Normal     None 160    110      65
+    ## 387          1.722568 385    Tyranitar     Rock     Dark 100    134     110
+    ## 393          1.720807 391       Goodra   Dragon     None  90    100      70
+    ## 396          1.439974 394      Kommo-o   Dragon Fighting  75    110     125
+    ## 390          1.410827 388    Hydreigon     Dark   Dragon  92    105      90
+    ## 363          1.279040 361       Lapras    Water      Ice 130     85      80
+    ## 267          1.271516 266    Rhyperior   Ground     Rock 115    140     130
+    ##     sp_attack sp_defence speed total
+    ## 402       145         95   130   690
+    ## 400        80        115   138   670
+    ## 401        80        115   138   670
+    ## 262        65        110    30   540
+    ## 387        95        100    61   600
+    ## 393       110        150    80   600
+    ## 396       100        105    85   600
+    ## 390       125         90    98   600
+    ## 363        85         95    60   535
+    ## 267        55         55    40   535
+
+![](README_files/figure-gfm/unnamed-chunk-32-1.png)<!-- --> We can see
+the top 10 highest performance Pokemon from the factor scores that we
+calculated from the last step. Eternatus is no doubt the best Pokemon
+overall, even in Poison type as well. Among 10 Pokemons, only Dragon
+type Pokemon appears twice. Goodra and Kommo-o seem to be the best
+Dragon Pokemon in this game.
+
+``` r
+tail(pokemon_scores,10)
+```
+
+    ##     performance_score No. pokemon_name   type_1 type_2 hp attack defence
+    ## 14          -1.612614  14      Metapod      Bug   None 50     20      55
+    ## 233         -1.694345 232       Wimpod      Bug  Water 25     35      40
+    ## 120         -1.722796 120        Ralts  Psychic  Fairy 28     25      25
+    ## 13          -1.739085  13     Caterpie      Bug   None 45     30      35
+    ## 351         -1.742344 349         Snom      Ice    Bug 30     25      35
+    ## 194         -1.742832 193        Pichu Electric   None 20     40      15
+    ## 10          -1.848369  10      Blipbug      Bug   None 25     20      20
+    ## 155         -1.850591 155   Wishiwashi    Water   None 45     20      20
+    ## 152         -1.862851 152       Feebas    Water   None 20     15      20
+    ## 144         -2.046645 144     Magikarp    Water   None 20     10      55
+    ##     sp_attack sp_defence speed total
+    ## 14         25         25    30   205
+    ## 233        20         30    80   230
+    ## 120        45         35    40   198
+    ## 13         20         20    45   195
+    ## 351        45         30    20   185
+    ## 194        35         35    60   205
+    ## 10         25         45    45   180
+    ## 155        25         25    40   175
+    ## 152        10         55    80   200
+    ## 144        15         20    80   200
+
+![](README_files/figure-gfm/unnamed-chunk-34-1.png)<!-- --> We are not
+surprised to find out some lowest performance Pokemon are the ones that
+have not evolved yet. Magikarp is absolutely the worst Pokemon.
