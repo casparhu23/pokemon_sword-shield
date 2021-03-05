@@ -27,12 +27,18 @@ library(stringr)
 library(ggplot2)
 ```
 
-This is a project combined with web scraping and data cleaning. The data
+This is a project combined with web scraping, data cleaning and K-means clustering. The data
 sets are from two different website. One is called `serebii.net`that
 collects Pokemon stats and info and the other website is named `IGN`, a
 famous games review website.
 
 ![](https://assets.pokemon.com/assets/cms2/img/video-games/_tiles/strategy/sword-shield/starters-guide/01/sword-shield-starters-guide-169-en.jpg)
+
+Shiny interactive web-app
+
+If you want to twist some variables or do some additional exploratory analysis on this pokemon data set. I have developed an interactive web application through Shiny, please click the link and check it out and take as much time as you need!
+
+Shiny App Link: https://caspar-hu23.shinyapps.io/Pokemon_App/
 
 ## Web Scraping
 
@@ -646,10 +652,10 @@ pokemon_list %>%
 
 ![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
-## Shiny interactive Web
+## Shiny interactive web-app
 
-If you think want to twist some variables or do some additional
-exploratory analysis on this pokemon data set. I have developed a
+If you want to twist some variables or do some additional
+exploratory analysis on this pokemon data set. I have developed an
 interactive web application through Shiny, please click the link and
 check it out and take as much time as you need\!
 
