@@ -1702,8 +1702,9 @@ head(pokemon_scores,10)
     ## 363        85         95    60   535
     ## 267        55         55    40   535
 
-![](README_files/figure-gfm/unnamed-chunk-32-1.png)<!-- --> We can see
-the top 10 highest performance Pokemon from the factor scores that we
+![](README_files/figure-gfm/unnamed-chunk-32-1.png)<!-- --> 
+
+We can see the top 10 highest performance Pokemon from the factor scores that we
 calculated from the last step. Eternatus is no doubt the best Pokemon
 overall, even in Poison type as well. Among 10 Pokemons, only Dragon
 type Pokemon appears twice. Goodra and Kommo-o seem to be the best
@@ -1736,6 +1737,7 @@ tail(pokemon_scores,10)
     ## 152        10         55    80   200
     ## 144        15         20    80   200
 
-![](README_files/figure-gfm/unnamed-chunk-34-1.png)<!-- --> We are not
-surprised to find out some lowest performance Pokemon are the ones that
+![](README_files/figure-gfm/unnamed-chunk-34-1.png)<!-- --> 
+
+We are not surprised to find out some lowest performance Pokemon are the ones that
 have not evolved yet. Magikarp is absolutely the worst Pokemon.
